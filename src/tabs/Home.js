@@ -1,6 +1,8 @@
 import { COLORS } from './../utils/Colors.js';
 import BitBox from './../components/BitBox.js';
 import { useState, useEffect } from 'react';
+import { thumbToASCII } from './../utils/thumbTranslator.js';
+import { armToASCII } from './../utils/armTranslator.js';
 
 function App(){
 
@@ -11,12 +13,16 @@ function App(){
 
   useEffect(() => {
     console.log("thumbBits changed!");
-    setThumbInstruction(JSON.stringify(thumbBits));
+    var result = thumbToASCII(thumbBits);
+    console.log(result.instrucao);
+    setThumbInstruction(result.instrucao);
   }, [thumbBits]);
 
   useEffect(() => {
     console.log("armBits changed!");
-    setArmInstruction(JSON.stringify(armBits));
+    var result = armToASCII(armBits);
+    console.log(result.instrucao);
+    setArmInstruction(result.instrucao);
   }, [armBits]);
 
   const change_thumb_bits = (index) => {

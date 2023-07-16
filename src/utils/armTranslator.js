@@ -560,7 +560,14 @@ function trata_ldstm(bits) {
 * Desassembla a instrução passada como parâmetro (32 bits).
 */
 
-function armToASCII() {
+function armToASCII(array) {
+  var bits = 0;
+  array.map((element, index) => {
+    if(element){
+      bits += 2 ** (31 - index);
+    }
+  });
+  console.log(bits.toString(16));
   if((bits & 0x0f000000) == 0x0f000000) return trata_swi(bits);
   if((bits & 0x0ffffff0) == 0x012fff10) return trata_bx(bits);
   if((bits & 0x0fc000f0) == 0x00000090) return trata_mul(bits);
