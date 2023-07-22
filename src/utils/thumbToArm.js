@@ -1,6 +1,10 @@
-import { ARM_SHIFTER, ARM_DP_OPCODES, ARM_REGS } from "./armConstants";
-
-const NULL_INSTRUCTION = 0x0000;
+import { 
+    ARM_SHIFTER,
+    ARM_DP_OPCODES,
+    ARM_REGS,
+    ARM_BASE_INSTRUCTIONS,
+    ARM_DT_OPCODES
+} from "./armConstants";
 
 /*
 Retorna bits mascarados.
@@ -10,22 +14,23 @@ function getMasked(bits, mask, shift = 0) {
     return (bits & mask) >> shift;
 }
 
-// O js usa operadores bit-a-bit com números de 32 bits
-// ao serem extendidos pro tamanho do inteiro, alguns valores
-// podem causar um comportameto inadequado para a instrução.
-function convertToUnsigned(bits) {
-    return bits >>> 0; // js magic right here;
-}
+// Se o offset for imediato, immediate flag = 0 (ARM things)
+function armLoadStore(opcode, imm_flag, byte_flag, write_back, ldr_str, Rn, Rd, offset) {
+    let arm_bits = ARM_BASE_INSTRUCTIONS['DATA_TRANSF'];
+    arm_bits += opcode << 26;
+    arm_bits += imm_flag << 25;
+    arm_bits += byte_flag << 22;
+    arm_bits += write_back << 21;
+    arm_bits += ldr_str << 20;
+    arm_bits += Rn << 16;
+    arm_bits += Rd << 12;
+    arm_bits += offset;
 
-function armLoadStore() {
-    const condition_field = 0xe; // Processamento de dados é incondicional no thumb
-    let arm_bits = 0x00000000;    
+    return arm_bits;
 }
 
 function armDataProcessing(immediate_flag, opcode, set_condition_codes, Rn, Rd, operand2) {
-    const condition_field = 0xe; // Processamento de dados é incondicional no thumb
-    let arm_bits = 0x00000000;
-    arm_bits += convertToUnsigned(condition_field << 28);
+    let arm_bits = ARM_BASE_INSTRUCTIONS['DATA_PCSS'];
     arm_bits += immediate_flag << 25;
     arm_bits += opcode << 21;
     arm_bits += set_condition_codes << 20;
@@ -86,10 +91,11 @@ function format4(thumb_bits) {
         0x4: ARM_SHIFTER['ASR'],
         0x7: ARM_SHIFTER['ROR']
     };
+    let thumb_shift = Object.keys(shift_to_arm).map(Number);
 
     let shift_operand2 = (Rs << 8) + (shift_to_arm[opcode] << 5) + 0x10 + Rd;
     
-    if (Object.keys(shift_to_arm).includes(opcode)) {
+    if (thumb_shift.includes(opcode)) {
         return armDataProcessing(0x0, ARM_DP_OPCODES['MOV'], 0x1, 0x0, Rd, shift_operand2);
     } else if (no_Rn_opcodes.includes(opcode)) {
         return armDataProcessing(0x0, ARM_DP_OPCODES[opcode], 0x1, 0x0, Rd, Rs);
@@ -99,25 +105,6 @@ function format4(thumb_bits) {
         return armDataProcessing(0x0, opcode, 0x1, Rd, Rd, Rs);
     }
     
-}
-
-// Load address 
-function format12(thumb_bits) {
-    let sp = getMasked(thumb_bits, 0x0800, 11);
-    let word8 = getMasked(thumb_bits, 0x00ff);
-    let Rd = getMasked(thumb_bits, 0x0700, 8);
-    let arm_Rn = sp === 0 ? ARM_REGS['PC'] : ARM_REGS['SP'];
-    
-    return armDataProcessing(0x1, ARM_DP_OPCODES['ADD'], 0x0, arm_Rn, Rd, word8);
-}
-
-// add offset to stack pointer
-function format13(thumb_bits) {
-    let sign = getMasked(thumb_bits, 0x008, 7);
-    let sword7 = getMasked(thumb_bits, 0x007f);
-    let arm_opcode = sign === 0x0 ? ARM_DP_OPCODES['ADD'] : ARM_DP_OPCODES['SUB'];
-    
-    return armDataProcessing(0x1, arm_opcode, 0x0, 0xd, 0xd, sword7);
 }
 
 // Hi register operations/branch exchange
@@ -148,18 +135,59 @@ function format5(thumb_bits) {
     }
 }
 
+// load/store with register offset
+function format7(thumb_bits) {
+    let byte_flag = getMasked(thumb_bits, 0x0400, 10);
+    let load_store = getMasked(thumb_bits, 0x0800, 11);
+    let Ro = getMasked(thumb_bits, 0x01c0, 6);
+    let Rb = getMasked(thumb_bits, 0x0038, 3);
+    let Rd = getMasked(thumb_bits, 0x0007);
+    return armLoadStore(ARM_DT_OPCODES['SINGLE_DATA'], 0x1, byte_flag, 0x0, load_store, Rb, Rd, Ro);
+}
+
+// load/store with immediate offset
+function format9(thumb_bits) {
+    let byte_flag = getMasked(thumb_bits, 0x1000, 10);
+    let load_store = getMasked(thumb_bits, 0x0800, 11);
+    let offset5 = getMasked(thumb_bits, 0x07d0, 6);
+    let Rb = getMasked(thumb_bits, 0x0038, 3);
+    let Rd = getMasked(thumb_bits, 0x0007);
+    return armLoadStore(ARM_DT_OPCODES['SINGLE_DATA'], 0x0, byte_flag, 0x0, load_store, Rb, Rd, offset5)
+}
+
+// Load address 
+function format12(thumb_bits) {
+    let sp = getMasked(thumb_bits, 0x0800, 11);
+    let word8 = getMasked(thumb_bits, 0x00ff);
+    let Rd = getMasked(thumb_bits, 0x0700, 8);
+    let arm_Rn = sp === 0 ? ARM_REGS['PC'] : ARM_REGS['SP'];
+    
+    return armDataProcessing(0x1, ARM_DP_OPCODES['ADD'], 0x0, arm_Rn, Rd, word8);
+}
+
+// add offset to stack pointer
+function format13(thumb_bits) {
+    let sign = getMasked(thumb_bits, 0x008, 7);
+    let sword7 = getMasked(thumb_bits, 0x007f);
+    let arm_opcode = sign === 0x0 ? ARM_DP_OPCODES['ADD'] : ARM_DP_OPCODES['SUB'];
+    
+    return armDataProcessing(0x1, arm_opcode, 0x0, 0xd, 0xd, sword7);
+}
+
+
 export default function thumbToArm(thumb_bits) {
     if ((thumb_bits & 0xf800) === 0x1800) return format2(thumb_bits);
     if ((thumb_bits & 0xe000) === 0x0000) return format1(thumb_bits); // Não mover acima de format2
     if ((thumb_bits & 0xe000) === 0x2000) return format3(thumb_bits);
     if ((thumb_bits & 0xfc00) === 0x4000) return format4(thumb_bits);
     if ((thumb_bits & 0xfc00) === 0x4800) return format5(thumb_bits);
+    if ((thumb_bits & 0xf200) === 0x5000) return format7(thumb_bits);
+    if ((thumb_bits & 0xe000) === 0x6000) return format9(thumb_bits);
     if ((thumb_bits & 0xf000) === 0xa000) return format12(thumb_bits);
     if ((thumb_bits & 0xff00) === 0xb000) return format13(thumb_bits);
     return (
-        NULL_INSTRUCTION
-    );
-    
+        ARM_BASE_INSTRUCTIONS['NULL']
+    ); 
 }
 // 1111 hex f
 // 1110 hex e
