@@ -8,7 +8,7 @@ import {
 
 /*
 Retorna bits mascarados.
-IMPORTANTE: Por convenção, deves-se 
+IMPORTANTE: Por convenção, elimina zeros à direita.
 */
 function getMasked(bits, mask, shift = 0) {
     return (bits & mask) >> shift;
