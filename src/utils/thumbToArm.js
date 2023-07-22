@@ -135,6 +135,13 @@ function format5(thumb_bits) {
     }
 }
 
+// PC-relative load
+function format6(thumb_bits) {
+    let Rd = getMasked(thumb_bits, 0x0700, 8);
+    let word8 = getMasked(thumb_bits, 0x00ff);
+    return armLoadStore(ARM_DT_OPCODES['SINGLE_DATA'], 0x0, 0x0, 0x0, 0x1, 0xf, Rd, word8)
+}
+
 // load/store with register offset
 function format7(thumb_bits) {
     let byte_flag = getMasked(thumb_bits, 0x0400, 10);
@@ -180,7 +187,8 @@ export default function thumbToArm(thumb_bits) {
     if ((thumb_bits & 0xe000) === 0x0000) return format1(thumb_bits); // Não mover acima de format2
     if ((thumb_bits & 0xe000) === 0x2000) return format3(thumb_bits);
     if ((thumb_bits & 0xfc00) === 0x4000) return format4(thumb_bits);
-    if ((thumb_bits & 0xfc00) === 0x4800) return format5(thumb_bits);
+    if ((thumb_bits & 0xfc00) === 0x4400) return format5(thumb_bits);
+    if ((thumb_bits & 0xf800) === 0x4800) return format6(thumb_bits);
     if ((thumb_bits & 0xf200) === 0x5000) return format7(thumb_bits);
     if ((thumb_bits & 0xe000) === 0x6000) return format9(thumb_bits);
     if ((thumb_bits & 0xf000) === 0xa000) return format12(thumb_bits);
