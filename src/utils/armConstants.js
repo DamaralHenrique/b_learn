@@ -17,12 +17,6 @@ export const ARM_DP_OPCODES = {
     MVN: 0b1111,
 };
 
-export const ARM_DT_OPCODES = {
-    SINGLE_DATA: 0x1,
-    HALF_DATA: 0x0,
-    BLOCK_DATA:0x4
-}
-
 export const ARM_SHIFTER = {
     LSL: 0b00,
     LSR: 0b01,
@@ -32,6 +26,7 @@ export const ARM_SHIFTER = {
 
 export const ARM_REGS = {
     SP: 0xd,
+    LR: 0xe,
     PC: 0xf
 }
 
@@ -39,6 +34,7 @@ export const ARM_REGS = {
 // o que a tradução pode atingir.
 export const ARM_BASE_INSTRUCTIONS = {
     DATA_PCSS: 0xe000_0000,
-    DATA_TRANSF: 0xe180_0000, 
+    SING_DATA_TRANSF: 0xe580_0000,
+    REG_DATA_TRANSF: 0xe820_0000,
     NULL: 0x0000_0000
 }

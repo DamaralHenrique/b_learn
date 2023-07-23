@@ -3,7 +3,6 @@ import {
     ARM_DP_OPCODES,
     ARM_REGS,
     ARM_BASE_INSTRUCTIONS,
-    ARM_DT_OPCODES
 } from "./armConstants";
 
 /*
@@ -15,17 +14,24 @@ function getMasked(bits, mask, shift = 0) {
 }
 
 // Se o offset for imediato, immediate flag = 0 (ARM things)
-function armLoadStore(opcode, imm_flag, byte_flag, write_back, ldr_str, Rn, Rd, offset) {
-    let arm_bits = ARM_BASE_INSTRUCTIONS['DATA_TRANSF'];
-    arm_bits += opcode << 26;
+function armLoadStore(imm_flag, byte_flag, ldr_str, Rn, Rd, offset) {
+    let arm_bits = ARM_BASE_INSTRUCTIONS['SING_DATA_TRANSF'];
     arm_bits += imm_flag << 25;
     arm_bits += byte_flag << 22;
-    arm_bits += write_back << 21;
     arm_bits += ldr_str << 20;
     arm_bits += Rn << 16;
     arm_bits += Rd << 12;
     arm_bits += offset;
+    return arm_bits;
+}
 
+function armRegTransfer(pre_pos, up_down, ldr_str, Rn, Rlist) {
+    let arm_bits = ARM_BASE_INSTRUCTIONS['REG_DATA_TRANSF'];
+    arm_bits += pre_pos << 24;
+    arm_bits += up_down << 23;
+    arm_bits += ldr_str << 20;
+    arm_bits += Rn << 16;
+    arm_bits += Rlist;
     return arm_bits;
 }
 
@@ -139,7 +145,7 @@ function format5(thumb_bits) {
 function format6(thumb_bits) {
     let Rd = getMasked(thumb_bits, 0x0700, 8);
     let word8 = getMasked(thumb_bits, 0x00ff);
-    return armLoadStore(ARM_DT_OPCODES['SINGLE_DATA'], 0x0, 0x0, 0x0, 0x1, 0xf, Rd, word8)
+    return armLoadStore(0x0, 0x0, 0x1, ARM_REGS['PC'], Rd, word8)
 }
 
 // load/store with register offset
@@ -149,7 +155,7 @@ function format7(thumb_bits) {
     let Ro = getMasked(thumb_bits, 0x01c0, 6);
     let Rb = getMasked(thumb_bits, 0x0038, 3);
     let Rd = getMasked(thumb_bits, 0x0007);
-    return armLoadStore(ARM_DT_OPCODES['SINGLE_DATA'], 0x1, byte_flag, 0x0, load_store, Rb, Rd, Ro);
+    return armLoadStore(0x1, byte_flag, load_store, Rb, Rd, Ro);
 }
 
 // load/store with immediate offset
@@ -159,7 +165,15 @@ function format9(thumb_bits) {
     let offset5 = getMasked(thumb_bits, 0x07d0, 6);
     let Rb = getMasked(thumb_bits, 0x0038, 3);
     let Rd = getMasked(thumb_bits, 0x0007);
-    return armLoadStore(ARM_DT_OPCODES['SINGLE_DATA'], 0x0, byte_flag, 0x0, load_store, Rb, Rd, offset5)
+    return armLoadStore(0x0, byte_flag, load_store, Rb, Rd, offset5)
+}
+
+// SP-relative load/store
+function format11(thumb_bits) {
+    let load_store = getMasked(thumb_bits, 0x0800, 11);
+    let word8 = getMasked(thumb_bits, 0x00ff);
+    let Rd = getMasked(thumb_bits, 0x0700, 8);
+    return armLoadStore(0x0, 0x0, load_store, ARM_REGS['SP'], Rd, word8)
 }
 
 // Load address 
@@ -178,9 +192,36 @@ function format13(thumb_bits) {
     let sword7 = getMasked(thumb_bits, 0x007f);
     let arm_opcode = sign === 0x0 ? ARM_DP_OPCODES['ADD'] : ARM_DP_OPCODES['SUB'];
     
-    return armDataProcessing(0x1, arm_opcode, 0x0, 0xd, 0xd, sword7);
+    return armDataProcessing(0x1, arm_opcode, 0x0, 0xd, ARM_REGS['SP'], sword7);
 }
 
+// push/pop registers
+function format14(thumb_bits) {
+    let ldr_str = getMasked(thumb_bits, 0x0800, 11);
+    let Rb = ARM_REGS['SP'];
+    let pc_lr = getMasked(thumb_bits, 0x0100, 8);
+    let extra_reg, pre_pos, up_down;
+
+    if (ldr_str === 0x1){
+        extra_reg = ARM_REGS['PC'];
+        pre_pos = 0x0;
+        up_down = 0x1;
+    } else {
+        extra_reg =  ARM_REGS['LR'];
+        pre_pos = 0x1;
+        up_down = 0x0;
+    }
+    let Rlist = getMasked(thumb_bits, 0x00ff) + (pc_lr << extra_reg);
+    return armRegTransfer(pre_pos, up_down, ldr_str, ARM_REGS['SP'], Rlist);
+}
+
+// Multiple load/store
+function format15(thumb_bits) {
+    let ldr_str = getMasked(thumb_bits, 0x0800, 11);
+    let Rb = getMasked(thumb_bits, 0x0700, 8);
+    let Rlist = getMasked(thumb_bits, 0x00ff);
+    return armRegTransfer(0x0, 0x1, ldr_str, Rb, Rlist);
+}
 
 export default function thumbToArm(thumb_bits) {
     if ((thumb_bits & 0xf800) === 0x1800) return format2(thumb_bits);
@@ -191,18 +232,12 @@ export default function thumbToArm(thumb_bits) {
     if ((thumb_bits & 0xf800) === 0x4800) return format6(thumb_bits);
     if ((thumb_bits & 0xf200) === 0x5000) return format7(thumb_bits);
     if ((thumb_bits & 0xe000) === 0x6000) return format9(thumb_bits);
+    if ((thumb_bits & 0xf000) === 0x9000) return format11(thumb_bits);
     if ((thumb_bits & 0xf000) === 0xa000) return format12(thumb_bits);
     if ((thumb_bits & 0xff00) === 0xb000) return format13(thumb_bits);
+    if ((thumb_bits & 0xf600) === 0xb400) return format14(thumb_bits);
+    if ((thumb_bits & 0xf000) === 0xc000) return format15(thumb_bits);
     return (
         ARM_BASE_INSTRUCTIONS['NULL']
     ); 
 }
-// 1111 hex f
-// 1110 hex e
-// 1101 hex d
-// 1100 hex c
-// 1011 hex b
-// 1010 hex a
-// 1001 hex 9
-// 1000 hex 8
-//...
