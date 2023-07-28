@@ -9,8 +9,28 @@ import {
 Retorna bits mascarados.
 IMPORTANTE: Por convenção, elimina zeros à direita.
 */
+function armSWI(comment_field) {
+    let arm_bits = ARM_BASE_INSTRUCTIONS['SWI'];
+    arm_bits += comment_field;
+    return arm_bits;
+}
+
 function getMasked(bits, mask, shift = 0) {
     return (bits & mask) >> shift;
+}
+
+function armBranchExchange(Rn) {
+    let arm_bits = ARM_BASE_INSTRUCTIONS['BRANCH_X'];
+    arm_bits += Rn;
+    return arm_bits;
+}
+
+function armBranch(exec_condition, link, offset) {
+    let arm_bits = ARM_BASE_INSTRUCTIONS['BRANCH'];
+    arm_bits += (exec_condition << 28 << 0); // 32 bit-wise problems
+    arm_bits += link << 24;
+    arm_bits += offset;
+    return arm_bits;
 }
 
 // Se o offset for imediato, immediate flag = 0 (ARM things)
@@ -22,6 +42,20 @@ function armLoadStore(imm_flag, byte_flag, ldr_str, Rn, Rd, offset) {
     arm_bits += Rn << 16;
     arm_bits += Rd << 12;
     arm_bits += offset;
+    return arm_bits;
+}
+
+
+function armHSLoadStore(imm_flag, signed_flag, half_flag, ldr_str, Rn, Rd, op2_high, op2_low) {
+    let arm_bits = ARM_BASE_INSTRUCTIONS['HS_DATA_TRANSF'];
+    arm_bits += imm_flag << 22;
+    arm_bits += ldr_str << 20;
+    arm_bits += Rn << 16;
+    arm_bits += Rd << 12;
+    arm_bits += op2_high << 8;
+    arm_bits += op2_low;
+    arm_bits += signed_flag << 6;
+    arm_bits += half_flag << 5;
     return arm_bits;
 }
 
@@ -119,7 +153,6 @@ function format5(thumb_bits) {
         0x0: ARM_DP_OPCODES['ADD'],
         0x1: ARM_DP_OPCODES['CMP'], 
         0x2: ARM_DP_OPCODES['MOV'], 
-        0x3: -0x1 // bx, por enquanto desconhecido
     };
 
     let opcode = getMasked(thumb_bits, 0x0300, 8);
@@ -127,15 +160,18 @@ function format5(thumb_bits) {
     let h2 = getMasked(thumb_bits, 0x0040, 6);
     
     // Seleciona os registradores de acordo com h1/h2
-    let Rs_Hs = getMasked(thumb_bits, 0x0038, 3) + hs << 3;
-    let Rd_Hd = getMasked(thumb_bits, 0x0007) + h1 << 3;
+    let Rs_Hs = getMasked(thumb_bits, 0x0038, 3) + (h2 << 3);
+    let Rd_Hd = getMasked(thumb_bits, 0x0007) + (h1 << 3);
     
-    if ( arm_opcode[opcode] === -0x1) {
-        return 0x0; // BX, para ser implementado
+    if ( opcode === 0x3) {
+        if( h1 === 0x1) {
+            return 0x0;
+        }
+        return armBranchExchange(Rs_Hs); // BX, para ser implementado
     } else if ((h1 | h2) === 0x0) {
         return 0x0; // undefined
     } else if (opcode === 0x0) { 
-        return armDataProcessing(0x0, arm_opcode[opcode], 0x0, Rd_Hd, Rd_Hd, Rs_Hs)
+        return armDataProcessing(0x0, arm_opcode[opcode], 0x0, Rd_Hd, Rd_Hd, Rs_Hs);
     } else {
         return armDataProcessing(0x0, arm_opcode[opcode], 0x0, 0x0, Rd_Hd, Rs_Hs); // deu certo
     }
@@ -145,7 +181,7 @@ function format5(thumb_bits) {
 function format6(thumb_bits) {
     let Rd = getMasked(thumb_bits, 0x0700, 8);
     let word8 = getMasked(thumb_bits, 0x00ff);
-    return armLoadStore(0x0, 0x0, 0x1, ARM_REGS['PC'], Rd, word8)
+    return armLoadStore(0x0, 0x0, 0x1, ARM_REGS['PC'], Rd, word8 << 2);
 }
 
 // load/store with register offset
@@ -158,14 +194,41 @@ function format7(thumb_bits) {
     return armLoadStore(0x1, byte_flag, load_store, Rb, Rd, Ro);
 }
 
-// load/store with immediate offset
-function format9(thumb_bits) {
-    let byte_flag = getMasked(thumb_bits, 0x1000, 10);
-    let load_store = getMasked(thumb_bits, 0x0800, 11);
-    let offset5 = getMasked(thumb_bits, 0x07d0, 6);
+// load/store halfword with immediate offset
+function format8(thumb_bits) {
+    let h_flag = getMasked(thumb_bits, 0x0800, 11);
+    let signed_flag = getMasked(thumb_bits, 0x0400, 10);
+    let load_store = ((h_flag === 0) & (signed_flag === 0)) ? 0x0 : 0x1;
+    let half_flag = ((signed_flag === 1) & (h_flag === 0)) ? 0x0 : 0x1;
+    let Ro = getMasked(thumb_bits, 0x01c0, 6);
     let Rb = getMasked(thumb_bits, 0x0038, 3);
     let Rd = getMasked(thumb_bits, 0x0007);
-    return armLoadStore(0x0, byte_flag, load_store, Rb, Rd, offset5)
+    return armHSLoadStore(0x0, signed_flag, half_flag, load_store, Rb, Rd, 0x0, Ro);
+}
+
+// load/store with immediate offset
+function format9(thumb_bits) {
+    let byte_flag = getMasked(thumb_bits, 0x1000, 12);
+    let load_store = getMasked(thumb_bits, 0x0800, 11);
+    let offset5 = getMasked(thumb_bits, 0x07d0, 6);
+    if (byte_flag === 0) {
+        offset5 = offset5 << 2;
+    }
+    let Rb = getMasked(thumb_bits, 0x0038, 3);
+    let Rd = getMasked(thumb_bits, 0x0007);
+    return armLoadStore(0x0, byte_flag, load_store, Rb, Rd, offset5);
+}
+
+
+// load/store halfword with immediate offset
+function format10(thumb_bits) {
+    let load_store = getMasked(thumb_bits, 0x0800, 11);
+    let offset5 = getMasked(thumb_bits, 0x07c0, 6);
+    let op2_high = offset5 >> 3;
+    let op2_low = (offset5 & 0x0007) << 1;
+    let Rb = getMasked(thumb_bits, 0x0038, 3);
+    let Rd = getMasked(thumb_bits, 0x0007);
+    return armHSLoadStore(0x1, 0x0, 0x1, load_store, Rb, Rd, op2_high, op2_low);
 }
 
 // SP-relative load/store
@@ -173,7 +236,7 @@ function format11(thumb_bits) {
     let load_store = getMasked(thumb_bits, 0x0800, 11);
     let word8 = getMasked(thumb_bits, 0x00ff);
     let Rd = getMasked(thumb_bits, 0x0700, 8);
-    return armLoadStore(0x0, 0x0, load_store, ARM_REGS['SP'], Rd, word8)
+    return armLoadStore(0x0, 0x0, load_store, ARM_REGS['SP'], Rd, word8 << 2);
 }
 
 // Load address 
@@ -183,7 +246,7 @@ function format12(thumb_bits) {
     let Rd = getMasked(thumb_bits, 0x0700, 8);
     let arm_Rn = sp === 0 ? ARM_REGS['PC'] : ARM_REGS['SP'];
     
-    return armDataProcessing(0x1, ARM_DP_OPCODES['ADD'], 0x0, arm_Rn, Rd, word8);
+    return armDataProcessing(0x1, ARM_DP_OPCODES['ADD'], 0x0, arm_Rn, Rd, word8 << 2);
 }
 
 // add offset to stack pointer
@@ -198,7 +261,6 @@ function format13(thumb_bits) {
 // push/pop registers
 function format14(thumb_bits) {
     let ldr_str = getMasked(thumb_bits, 0x0800, 11);
-    let Rb = ARM_REGS['SP'];
     let pc_lr = getMasked(thumb_bits, 0x0100, 8);
     let extra_reg, pre_pos, up_down;
 
@@ -223,6 +285,16 @@ function format15(thumb_bits) {
     return armRegTransfer(0x0, 0x1, ldr_str, Rb, Rlist);
 }
 
+// conditional branch
+function format16(thumb_bits) {
+    return 0;
+}
+
+function format17(thumb_bits) {
+    let value8 = getMasked(thumb_bits, 0x00ff);
+    return armSWI(value8);
+}
+
 export default function thumbToArm(thumb_bits) {
     if ((thumb_bits & 0xf800) === 0x1800) return format2(thumb_bits);
     if ((thumb_bits & 0xe000) === 0x0000) return format1(thumb_bits); // Não mover acima de format2
@@ -231,13 +303,14 @@ export default function thumbToArm(thumb_bits) {
     if ((thumb_bits & 0xfc00) === 0x4400) return format5(thumb_bits);
     if ((thumb_bits & 0xf800) === 0x4800) return format6(thumb_bits);
     if ((thumb_bits & 0xf200) === 0x5000) return format7(thumb_bits);
+    if ((thumb_bits & 0xf200) === 0x5200) return format8(thumb_bits);
     if ((thumb_bits & 0xe000) === 0x6000) return format9(thumb_bits);
+    if ((thumb_bits & 0xf000) === 0x8000) return format10(thumb_bits);
     if ((thumb_bits & 0xf000) === 0x9000) return format11(thumb_bits);
     if ((thumb_bits & 0xf000) === 0xa000) return format12(thumb_bits);
     if ((thumb_bits & 0xff00) === 0xb000) return format13(thumb_bits);
     if ((thumb_bits & 0xf600) === 0xb400) return format14(thumb_bits);
     if ((thumb_bits & 0xf000) === 0xc000) return format15(thumb_bits);
-    return (
-        ARM_BASE_INSTRUCTIONS['NULL']
-    ); 
+    if ((thumb_bits & 0xff00) === 0xdf00) return format17(thumb_bits);
+    return ARM_BASE_INSTRUCTIONS['NULL']; 
 }
