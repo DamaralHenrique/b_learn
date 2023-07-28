@@ -35,6 +35,10 @@ export const ARM_REGS = {
 export const ARM_BASE_INSTRUCTIONS = {
     DATA_PCSS: 0xe000_0000,
     SING_DATA_TRANSF: 0xe580_0000,
+    HS_DATA_TRANSF: 0xe180_0090,
     REG_DATA_TRANSF: 0xe820_0000,
+    BRANCH: 0x0a00_0000,
+    BRANCH_X: 0xe12f_ff10,
+    SWI: 0xef00_0000,
     NULL: 0x0000_0000
 }
