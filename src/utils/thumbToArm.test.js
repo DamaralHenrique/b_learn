@@ -1,5 +1,15 @@
 import thumbToArm from "./thumbToArm";
 
+test("teste formato 13 - add - normal case", () => {
+    const add = thumbToArm(0b10110000_0_1111111);
+    expect(add).toBe(0b1110_00_1_0100_0_1101_1101_000000000000);
+});
+
+test("teste formato 13 - add - border case", () => {
+    const add = thumbToArm(0b10110000_0_1111110);
+    expect(add).toBe(0b1110_00_1_0100_0_1101_1101_000011111100);
+});
+
 test("teste formato 4 - add", () => {
     const add = thumbToArm(0b010000_0000_001_010);
     expect(add).toBe(0b1110_00_0_0000_1_0010_0010_000000000001);
@@ -66,11 +76,23 @@ test("teste formato 15 - multiple load with reg list", () => {
 });
 
 test("teste formato 16 - branch if C clear or Z set", () => {
+    const condBranch = thumbToArm(0b1101_1001_00000110);
+    expect(condBranch).toBe(0b1001_101_0_000000000000000000010000);
+});
+
+test("teste formato 16 - branch if C clear or Z set, negative offset", () => {
+    const condBranch = thumbToArm(0b1101_1001_11111100);
+    expect(condBranch).toBe(0b1001_101_0_111111111111111111111100);
 });
 
 test("teste formato 17 - swi", () => {
     const mult_load = thumbToArm(0b11011111_10100101); // ldmia Rb!, {Rlist}
     expect(mult_load).toBe(0b1110_1111_000000000000000010100101); // ldmia r3!, {Rlist}  
+});
+
+test("teste formato 18 - branch always", () => {
+    const condBranch = thumbToArm(0b11100_00000000110);
+    expect(condBranch).toBe(0b1110_101_0_000000000000000000010000);
 });
 
 

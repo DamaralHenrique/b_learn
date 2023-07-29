@@ -9,15 +9,21 @@ import {
 Retorna bits mascarados.
 IMPORTANTE: Por convenção, elimina zeros à direita.
 */
+function getMasked(bits, mask, shift = 0) {
+    return (bits & mask) >> shift;
+}
+
+function signExtendOffset(value, valueBitSize) {
+    let extended = value << (32 - valueBitSize) >> (32 - valueBitSize); 
+    return extended & 0x00ff_ffff;
+}
+
 function armSWI(comment_field) {
     let arm_bits = ARM_BASE_INSTRUCTIONS['SWI'];
     arm_bits += comment_field;
     return arm_bits;
 }
 
-function getMasked(bits, mask, shift = 0) {
-    return (bits & mask) >> shift;
-}
 
 function armBranchExchange(Rn) {
     let arm_bits = ARM_BASE_INSTRUCTIONS['BRANCH_X'];
@@ -25,11 +31,12 @@ function armBranchExchange(Rn) {
     return arm_bits;
 }
 
-function armBranch(exec_condition, link, offset) {
+function armBranch(exec_condition, link, offset, offsetsize) {
+    let unsigned_condition = exec_condition << 28 >>> 0; // 32 bit-wise problems
     let arm_bits = ARM_BASE_INSTRUCTIONS['BRANCH'];
-    arm_bits += (exec_condition << 28 << 0); // 32 bit-wise problems
+    arm_bits += unsigned_condition;
     arm_bits += link << 24;
-    arm_bits += offset;
+    arm_bits += signExtendOffset(offset, offsetsize);
     return arm_bits;
 }
 
@@ -253,9 +260,10 @@ function format12(thumb_bits) {
 function format13(thumb_bits) {
     let sign = getMasked(thumb_bits, 0x008, 7);
     let sword7 = getMasked(thumb_bits, 0x007f);
+    let offset = sword7 === 0x007f ? 0x0 : sword7; // sign extended problems
     let arm_opcode = sign === 0x0 ? ARM_DP_OPCODES['ADD'] : ARM_DP_OPCODES['SUB'];
     
-    return armDataProcessing(0x1, arm_opcode, 0x0, 0xd, ARM_REGS['SP'], sword7);
+    return armDataProcessing(0x1, arm_opcode, 0x0, 0xd, ARM_REGS['SP'], offset << 1);
 }
 
 // push/pop registers
@@ -285,14 +293,25 @@ function format15(thumb_bits) {
     return armRegTransfer(0x0, 0x1, ldr_str, Rb, Rlist);
 }
 
-// conditional branch
+// conditional branch - unsafe translation
 function format16(thumb_bits) {
-    return 0;
+    let condition = getMasked(thumb_bits, 0x0f00, 8);
+    let soffset8 = getMasked(thumb_bits, 0x00ff);
+    let offset_size = 0x8;
+    return armBranch(condition, 0x0, (soffset8 << 1) + 0x4, offset_size);
 }
 
 function format17(thumb_bits) {
     let value8 = getMasked(thumb_bits, 0x00ff);
     return armSWI(value8);
+}
+
+// unconditional branch - unsafe translation
+function format18(thumb_bits) {
+    let offset11 = getMasked(thumb_bits, 0x07ff);
+    let unconditional = 0xe;
+    let offset_size = 0xd;
+    return armBranch(unconditional, 0x0, (offset11 << 1) + 0x4, offset_size);
 }
 
 export default function thumbToArm(thumb_bits) {
@@ -312,5 +331,7 @@ export default function thumbToArm(thumb_bits) {
     if ((thumb_bits & 0xf600) === 0xb400) return format14(thumb_bits);
     if ((thumb_bits & 0xf000) === 0xc000) return format15(thumb_bits);
     if ((thumb_bits & 0xff00) === 0xdf00) return format17(thumb_bits);
+    if ((thumb_bits & 0xf000) === 0xd000) return format16(thumb_bits); // Não mover acima de 17
+    if ((thumb_bits & 0xf800) === 0xe000) return format18(thumb_bits);
     return ARM_BASE_INSTRUCTIONS['NULL']; 
 }
