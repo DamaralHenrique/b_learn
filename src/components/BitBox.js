@@ -10,15 +10,17 @@ function BitBox({value, onPress}) {
 
 const Styles = {
   app: {
+    margin: '2px',
     padding: '5px',
     backgroundColor: COLORS.white,
     borderColor: COLORS.black,
     borderStyle: "solid",
     borderWidth: "2px",
+    borderRadius: 10
   },
   bit_text: {
+    fontSize: 20,
     innerHeight: 100,
-    fontFamily: "Montserrat",
   }
 };
   
