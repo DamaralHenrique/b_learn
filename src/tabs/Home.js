@@ -1,5 +1,4 @@
-import { COLORS } from './../utils/Colors.js';
-import BitBox from './../components/BitBox.js';
+import MainGrid from './../components/MainGrid.js';
 import { useState, useEffect } from 'react';
 import { thumbToASCII } from './../utils/thumbTranslator.js';
 import { armToASCII } from './../utils/armTranslator.js';
@@ -34,20 +33,19 @@ function App(){
 
   return (
     <div style={Styles.app}>
-      <div style={{backgroundColor: COLORS.green, ...Styles.background}}>
-        <div style={Styles.bitRowDiv}><div style={Styles.bitRow}>
-          {thumbBits.map((element, index) => <BitBox value={element} onPress={() => change_thumb_bits(index)}/>)}
-        </div></div>
-        <p>{thumbInstruction}</p>
-        <p>Thumb</p>
-      </div>
-      <div style={{backgroundColor: COLORS.black, ...Styles.background}}>
-        <div style={Styles.bitRowDiv}><div style={Styles.bitRow}>
-          {armBits.map((element, index) => <BitBox value={element}/>)}
-        </div></div>
-        <p>{armInstruction}</p>
-        <p>ARM</p>
-      </div>
+      <MainGrid
+        bits={thumbBits}
+        instruction={thumbInstruction}
+        isThumb={true}
+        change_bits={change_thumb_bits}
+        message="my message"
+      />
+      <MainGrid
+        bits={armBits}
+        instruction={armInstruction}
+        isThumb={false}
+        message="error message"
+      />
     </div>
   );
 }
@@ -55,19 +53,8 @@ function App(){
 const Styles = {
   app: {
     textAlign: "center",
+    overflow: 'hidden'
   },
-  background: {
-    padding: "10px",
-    fontFamily: "Arial",
-  },
-  bitRowDiv: {
-    display: "flex",
-    justifyContent: "center"
-  },
-  bitRow: {
-    display: "flex",
-    flexDirection: "row"
-  }
 };
 
 export default App;
