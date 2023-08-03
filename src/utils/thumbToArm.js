@@ -14,7 +14,11 @@ function getMasked(bits, mask, shift = 0) {
 }
 
 function signExtendOffset(value, valueBitSize) {
-    let extended = value << (32 - valueBitSize) >> (32 - valueBitSize); 
+    console.log(value);
+    let extended = value << (32 - valueBitSize); 
+    console.log(extended);
+    extended = extended >> (32 - valueBitSize); 
+    console.log(extended);
     return extended & 0x00ff_ffff;
 }
 
@@ -293,12 +297,14 @@ function format15(thumb_bits) {
     return armRegTransfer(0x0, 0x1, ldr_str, Rb, Rlist);
 }
 
-// conditional branch - unsafe translation
 function format16(thumb_bits) {
     let condition = getMasked(thumb_bits, 0x0f00, 8);
     let soffset8 = getMasked(thumb_bits, 0x00ff);
     let offset_size = 0x8;
-    return armBranch(condition, 0x0, (soffset8 << 1) + 0x4, offset_size);
+    if (soffset8 % 2 == 0) {
+        return armBranch(condition, 0x0, (soffset8 >> 1), offset_size - 1);
+    }
+    return 0x0;    
 }
 
 function format17(thumb_bits) {
@@ -306,12 +312,14 @@ function format17(thumb_bits) {
     return armSWI(value8);
 }
 
-// unconditional branch - unsafe translation
 function format18(thumb_bits) {
     let offset11 = getMasked(thumb_bits, 0x07ff);
     let unconditional = 0xe;
-    let offset_size = 0xd;
-    return armBranch(unconditional, 0x0, (offset11 << 1) + 0x4, offset_size);
+    let offset_size = 0xb;
+    if (offset11 % 2 == 0) {
+        return armBranch(unconditional, 0x0, (offset11 >> 1), offset_size - 1);
+    }
+    return 0x0;
 }
 
 export default function thumbToArm(thumb_bits) {

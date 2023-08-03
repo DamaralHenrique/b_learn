@@ -77,12 +77,12 @@ test("teste formato 15 - multiple load with reg list", () => {
 
 test("teste formato 16 - branch if C clear or Z set", () => {
     const condBranch = thumbToArm(0b1101_1001_00000110);
-    expect(condBranch).toBe(0b1001_101_0_000000000000000000010000);
+    expect(condBranch).toBe(0b1001_101_0_000000000000000000000011);
 });
 
 test("teste formato 16 - branch if C clear or Z set, negative offset", () => {
-    const condBranch = thumbToArm(0b1101_1001_11111100);
-    expect(condBranch).toBe(0b1001_101_0_111111111111111111111100);
+    const condBranch = thumbToArm(0b1101_1001_11111101);
+    expect(condBranch).toBe(0b0);
 });
 
 test("teste formato 17 - swi", () => {
@@ -90,9 +90,13 @@ test("teste formato 17 - swi", () => {
     expect(mult_load).toBe(0b1110_1111_000000000000000010100101); // ldmia r3!, {Rlist}  
 });
 
-test("teste formato 18 - branch always", () => {
-    const condBranch = thumbToArm(0b11100_00000000110);
-    expect(condBranch).toBe(0b1110_101_0_000000000000000000010000);
+test("teste formato 18 - branch possible", () => {
+    const condBranch = thumbToArm(0b11100_11111111110);
+    expect(condBranch).toBe(0b1110_101_0_111111111111111111111111);
+});
+test("teste formato 18 - branch impossible", () => {
+    const condBranch = thumbToArm(0b11100_11111111111);
+    expect(condBranch).toBe(0b0);
 });
 
 
