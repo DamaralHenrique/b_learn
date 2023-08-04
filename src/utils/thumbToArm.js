@@ -322,7 +322,13 @@ function format18(thumb_bits) {
     return 0x0;
 }
 
-export default function thumbToArm(thumb_bits) {
+function thumbToArm(thumb_array) {
+    var thumb_bits = 0;
+    thumb_array.map((element, index) => {
+        if(element){
+            thumb_bits += 2 ** (15 - index);
+        }
+    });
     if ((thumb_bits & 0xf800) === 0x1800) return format2(thumb_bits);
     if ((thumb_bits & 0xe000) === 0x0000) return format1(thumb_bits); // Não mover acima de format2
     if ((thumb_bits & 0xe000) === 0x2000) return format3(thumb_bits);
@@ -343,3 +349,5 @@ export default function thumbToArm(thumb_bits) {
     if ((thumb_bits & 0xf800) === 0xe000) return format18(thumb_bits);
     return ARM_BASE_INSTRUCTIONS['NULL']; 
 }
+
+export { thumbToArm }

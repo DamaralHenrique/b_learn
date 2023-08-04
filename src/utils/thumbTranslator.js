@@ -302,7 +302,7 @@ console.log(disasm(0x402b));
 /**
 * Desassembla a instrução passada como parâmetro (16 bits).
 */
-export function thumbToASCII(array) {
+function thumbToASCII(array) {
   var bits = 0;
   array.map((element, index) => {
     if(element){

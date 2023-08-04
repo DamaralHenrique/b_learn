@@ -2,6 +2,7 @@ import MainGrid from './../components/MainGrid.js';
 import { useState, useEffect } from 'react';
 import { thumbToASCII } from './../utils/thumbTranslator.js';
 import { armToASCII } from './../utils/armTranslator.js';
+import { thumbToArm } from './../utils/thumbToArm.js';
 
 function App(){
 
@@ -28,7 +29,12 @@ function App(){
     var newArray = thumbBits.slice(0);
     newArray[index] = !newArray[index];
     setThumbBits(newArray);
-    setArmBits([...newArray, ...newArray]);
+    var arm_array = Array(32).fill(false);
+    var arm_string = thumbToArm(newArray).toString(2);
+    [...arm_string].forEach((char, index) => {
+      arm_array[index] = char == '1';
+    })
+    setArmBits(arm_array);
   }
 
   return (
