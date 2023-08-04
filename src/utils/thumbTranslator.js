@@ -169,6 +169,7 @@ function trata_op4(bits) {
 }
 
 function trata_op5(bits) {
+  console.log("trata_op5");
   let rs = (bits >> 3) & 0x07;
   let rd = (bits & 0x07);
   let op = (bits >> 6) & 0x0f;
@@ -301,7 +302,14 @@ console.log(disasm(0x402b));
 /**
 * Desassembla a instrução passada como parâmetro (16 bits).
 */
-function thumbToASCII() {
+export function thumbToASCII(array) {
+  var bits = 0;
+  array.map((element, index) => {
+    if(element){
+      bits += 2 ** (15 - index);
+    }
+  });
+  console.log(bits.toString(16));
   if((bits & 0xff00) == 0xdf00) return trata_swi(bits);
   if((bits & 0xfc00) == 0x1800) return trata_op1(bits);
   if((bits & 0xfc00) == 0x1c00) return trata_op2(bits);
