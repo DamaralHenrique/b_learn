@@ -1,70 +1,76 @@
-# Getting Started with Create React App
+# B_LEARN
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+### Tabela de conteúdos
 
-## Available Scripts
+1. [Objetivo](#objetivo)
+2. [Requisitos e Dependências](#requisitos-e-dependências)
+3. [Execução](#execução)
+4. [Exemplos](#exemplos)
+5. [Integrantes](#integrantes)
+6. [Agradecimentos](#agradecimentos)
 
-In the project directory, you can run:
+## Objetivo
 
-### `npm start`
+O objetivo do projeto B_LEARN é o desenvolvimento de um tradutor de instruções Thumb (16 bits) para ARM32 (32 bits). Para a tradução, são utilzados campos (inputs) nos quais os bits das instruções podem ser configurados, e a tradução ocorre de maneira automática.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Para isso, foram levadas em conta as instruções Thumb que possuam equivalente direto em ARM32, isto é, que gerem apenas uma instrução na ISA ARM32.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+Além da visualização do bits, o projeto conta com tradutores de instruções binárias para instruções ASCII, desenvolvidos pelo [Professor Bruno Basseto](https://github.com/bru4bas)
 
-### `npm test`
+## Requisitos e Dependências
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+1. WSL/Linux
 
-### `npm run build`
+    Recomenda-se que o projeto seja executada no sobre o Linux, ou sobre o WSL.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+2. Node
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+    Para execução deste projeto, é recomendável que você tenha instalado no seu ambiente a versão estável mais recente do Node (> v18.16.1).
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+~~~bash
+    sudo apt-get install curl
+~~~
+~~~bash
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash
+    command -v nvm
+~~~
+~~~bash
+    nvm install --lts
+~~~
 
-### `npm run eject`
+## Execução
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Instalando as dependências do projeto
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Na pasta raiz do projeto, digite o seguinte comando para instalar as dependências do projeto:
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+~~~bash
+    npm install
+~~~
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### Executando o projeto
 
-## Learn More
+~~~bash
+    npm start
+~~~
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Testes
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+~~~bash
+    npm test
+~~~
 
-### Code Splitting
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## Exemplos
 
-### Analyzing the Bundle Size
+## Integrantes
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+| Nome               | Github |
+|--------------------|--------|
+| Henrique D'Amaral  | @git   |
+| Rafael Nakata      | @git   |
+| Vinicius de Castro | @git   |
 
-### Making a Progressive Web App
+## Agradecimentos
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Agradecimentos especiais ao [Professor Bruno Basseto](https://github.com/bru4bas), autor do tradutor de instruções binárias para instruções ASCII.
