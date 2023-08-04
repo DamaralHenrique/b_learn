@@ -14,11 +14,8 @@ function getMasked(bits, mask, shift = 0) {
 }
 
 function signExtendOffset(value, valueBitSize) {
-    console.log(value);
     let extended = value << (32 - valueBitSize); 
-    console.log(extended);
     extended = extended >> (32 - valueBitSize); 
-    console.log(extended);
     return extended & 0x00ff_ffff;
 }
 
@@ -36,10 +33,10 @@ function armBranchExchange(Rn) {
 }
 
 function armBranch(exec_condition, link, offset, offsetsize) {
-    let unsigned_condition = exec_condition << 28 >>> 0; // 32 bit-wise problems
+    let unsigned_condition = ((exec_condition << 28) >>> 0); // 32 bit-wise problems
     let arm_bits = ARM_BASE_INSTRUCTIONS['BRANCH'];
     arm_bits += unsigned_condition;
-    arm_bits += link << 24;
+    arm_bits += (link << 24);
     arm_bits += signExtendOffset(offset, offsetsize);
     return arm_bits;
 }
@@ -56,6 +53,13 @@ function armLoadStore(imm_flag, byte_flag, ldr_str, Rn, Rd, offset) {
     return arm_bits;
 }
 
+function armMultiplication(Rd, Rn) {
+    let arm_bits = ARM_BASE_INSTRUCTIONS['MUL'];
+    arm_bits += Rd << 16;
+    arm_bits += Rd << 8;
+    arm_bits += Rn;
+    return arm_bits;
+}
 
 function armHSLoadStore(imm_flag, signed_flag, half_flag, ldr_str, Rn, Rd, op2_high, op2_low) {
     let arm_bits = ARM_BASE_INSTRUCTIONS['HS_DATA_TRANSF'];
@@ -87,7 +91,7 @@ function armDataProcessing(immediate_flag, opcode, set_condition_codes, Rn, Rd, 
     arm_bits += set_condition_codes << 20;
     arm_bits += Rn << 16;
     arm_bits += Rd << 12;
-    arm_bits += operand2 << 0;
+    arm_bits += operand2;
     return arm_bits; // Basicamente isso transforma de 
 }
 
@@ -97,7 +101,7 @@ function format1(thumb_bits) {
     let offset = getMasked(thumb_bits, 0x07c0, 6);
     let Rs = getMasked(thumb_bits, 0x0038, 3);
     let Rd = getMasked(thumb_bits, 0x0007);
-    let operand2 = (offset << 7) + (opcode << 5) + Rs;
+    let operand2 = (offset << 7) + (opcode << 4) + Rs;
     return armDataProcessing(0x0, ARM_DP_OPCODES['MOV'], 0x1, 0x0, Rd, operand2);
 }
 
@@ -109,20 +113,20 @@ function format2(thumb_bits) {
     let Rs = getMasked(thumb_bits, 0x0038, 3);
     let Rd = getMasked(thumb_bits, 0x0007);
 
-    let arm_opcode = opcode ? ARM_DP_OPCODES['ADD'] : ARM_DP_OPCODES['SUB'];
+    let arm_opcode = opcode === 0 ? ARM_DP_OPCODES['ADD'] : ARM_DP_OPCODES['SUB'];
     return armDataProcessing(immediate_flag, arm_opcode, 0x1, Rs, Rd, Rn_or_immediate);
 }
 
 // Move/comapre/add/sub immediate
 function format3(thumb_bits) {
     // Mapa de opcodes equivalentes
-    const opcode_to_arm = {
+    let opcode = getMasked(thumb_bits, 0x1800, 11);
+    let opcode_to_arm = {
         0x0: ARM_DP_OPCODES['MOV'], 
         0x1: ARM_DP_OPCODES['CMP'], 
         0x2: ARM_DP_OPCODES['ADD'], 
         0x3: ARM_DP_OPCODES['SUB']
     };
-    let opcode = getMasked(thumb_bits, 0x0180, 11);
     let Rd = getMasked(thumb_bits, 0x0700, 8);
     let offset8 = getMasked(thumb_bits, 0x00ff);
     return armDataProcessing(0x1, opcode_to_arm[opcode], 0x1, Rd, Rd, offset8);
@@ -130,7 +134,6 @@ function format3(thumb_bits) {
 
 // ALU operations
 function format4(thumb_bits) {
-    const no_Rn_opcodes = [0x8, 0xa, 0xb, 0xf];
     let opcode = getMasked(thumb_bits, 0x03c0, 6);
     let Rs = getMasked(thumb_bits, 0x0038, 3);
     let Rd = getMasked(thumb_bits, 0x0007);
@@ -142,6 +145,8 @@ function format4(thumb_bits) {
         0x4: ARM_SHIFTER['ASR'],
         0x7: ARM_SHIFTER['ROR']
     };
+
+    let no_Rn_opcodes = [0x8, 0xa, 0xb, 0xf];
     let thumb_shift = Object.keys(shift_to_arm).map(Number);
 
     let shift_operand2 = (Rs << 8) + (shift_to_arm[opcode] << 5) + 0x10 + Rd;
@@ -149,13 +154,19 @@ function format4(thumb_bits) {
     if (thumb_shift.includes(opcode)) {
         return armDataProcessing(0x0, ARM_DP_OPCODES['MOV'], 0x1, 0x0, Rd, shift_operand2);
     } else if (no_Rn_opcodes.includes(opcode)) {
-        return armDataProcessing(0x0, ARM_DP_OPCODES[opcode], 0x1, 0x0, Rd, Rs);
+        return armDataProcessing(0x0, opcode, 0x1, 0x0, Rd, Rs);
     } else if (opcode === 0x9) {
         return armDataProcessing(0x1, ARM_DP_OPCODES['RSB'], 0x1, Rs, Rd, 0x0);
     } else {
         return armDataProcessing(0x0, opcode, 0x1, Rd, Rd, Rs);
     }
     
+}
+
+function format4m(thumb_bits) {
+    let Rs = getMasked(thumb_bits, 0x0038, 3);
+    let Rd = getMasked(thumb_bits, 0x0007);
+    return armMultiplication(Rd, Rs);
 }
 
 // Hi register operations/branch exchange
@@ -256,13 +267,13 @@ function format12(thumb_bits) {
     let word8 = getMasked(thumb_bits, 0x00ff);
     let Rd = getMasked(thumb_bits, 0x0700, 8);
     let arm_Rn = sp === 0 ? ARM_REGS['PC'] : ARM_REGS['SP'];
-    
-    return armDataProcessing(0x1, ARM_DP_OPCODES['ADD'], 0x0, arm_Rn, Rd, word8 << 2);
+    let operand2 = (0b1111 << 8) + word8; // que o offset esteja correto no ARM32
+    return armDataProcessing(0x1, ARM_DP_OPCODES['ADD'], 0x0, arm_Rn, Rd, operand2);
 }
 
 // add offset to stack pointer
 function format13(thumb_bits) {
-    let sign = getMasked(thumb_bits, 0x008, 7);
+    let sign = getMasked(thumb_bits, 0x0080, 7);
     let sword7 = getMasked(thumb_bits, 0x007f);
     let offset = sword7 === 0x007f ? 0x0 : sword7; // sign extended problems
     let arm_opcode = sign === 0x0 ? ARM_DP_OPCODES['ADD'] : ARM_DP_OPCODES['SUB'];
@@ -301,7 +312,7 @@ function format16(thumb_bits) {
     let condition = getMasked(thumb_bits, 0x0f00, 8);
     let soffset8 = getMasked(thumb_bits, 0x00ff);
     let offset_size = 0x8;
-    if (soffset8 % 2 == 0) {
+    if (soffset8 % 2 === 0) {
         return armBranch(condition, 0x0, (soffset8 >> 1), offset_size - 1);
     }
     return 0x0;    
@@ -316,7 +327,7 @@ function format18(thumb_bits) {
     let offset11 = getMasked(thumb_bits, 0x07ff);
     let unconditional = 0xe;
     let offset_size = 0xb;
-    if (offset11 % 2 == 0) {
+    if (offset11 % 2 === 0) {
         return armBranch(unconditional, 0x0, (offset11 >> 1), offset_size - 1);
     }
     return 0x0;
@@ -332,6 +343,7 @@ function thumbToArm(thumb_array) {
     if ((thumb_bits & 0xf800) === 0x1800) return format2(thumb_bits);
     if ((thumb_bits & 0xe000) === 0x0000) return format1(thumb_bits); // Não mover acima de format2
     if ((thumb_bits & 0xe000) === 0x2000) return format3(thumb_bits);
+    if ((thumb_bits & 0xffc0) === 0x4340) return format4m(thumb_bits);
     if ((thumb_bits & 0xfc00) === 0x4000) return format4(thumb_bits);
     if ((thumb_bits & 0xfc00) === 0x4400) return format5(thumb_bits);
     if ((thumb_bits & 0xf800) === 0x4800) return format6(thumb_bits);

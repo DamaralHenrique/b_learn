@@ -1,4 +1,4 @@
-import thumbToArm from "./thumbToArm";
+import {thumbToArm} from "./thumbToArm";
 
 test("teste formato 13 - add - normal case", () => {
     const add = thumbToArm(0b10110000_0_1111111);

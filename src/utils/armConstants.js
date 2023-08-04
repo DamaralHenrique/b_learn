@@ -34,6 +34,7 @@ export const ARM_REGS = {
 // o que a tradução pode atingir.
 export const ARM_BASE_INSTRUCTIONS = {
     DATA_PCSS: 0xe000_0000,
+    MUL: 0xe010_0090,
     SING_DATA_TRANSF: 0xe580_0000,
     HS_DATA_TRANSF: 0xe180_0090,
     REG_DATA_TRANSF: 0xe820_0000,
