@@ -154,7 +154,7 @@ function format4(thumb_bits) {
     if (thumb_shift.includes(opcode)) {
         return armDataProcessing(0x0, ARM_DP_OPCODES['MOV'], 0x1, 0x0, Rd, shift_operand2);
     } else if (no_Rn_opcodes.includes(opcode)) {
-        return armDataProcessing(0x0, opcode, 0x1, 0x0, Rd, Rs);
+        return armDataProcessing(0x0, opcode, 0x1, Rd, Rd, Rs);
     } else if (opcode === 0x9) {
         return armDataProcessing(0x1, ARM_DP_OPCODES['RSB'], 0x1, Rs, Rd, 0x0);
     } else {
