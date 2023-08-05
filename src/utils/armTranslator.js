@@ -481,7 +481,7 @@ function trata_b(bits) {
   if((bits & 0x01000000) == 0x01000000) res = "bl";
   else res = "b";
   res += trata_cond(bits);
-  res += ` pc+#${(offset+2)*4}`
+  res += ` pc+#${(offset+1)*4}`
   return {
      instrucao: res,
      mask: "11110002333333333333333333333333"

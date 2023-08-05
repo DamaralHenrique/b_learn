@@ -31,6 +31,8 @@ function App(){
     setThumbBits(newArray);
     var arm_array = Array(32).fill(false);
     var arm_string = thumbToArm(newArray).toString(2);
+    arm_string = arm_string.padStart(32, '0');
+    console.log(arm_string);
     [...arm_string].forEach((char, index) => {
       arm_array[index] = char == '1';
     })

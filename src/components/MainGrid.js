@@ -38,6 +38,13 @@ function MainGrid({bits, instruction, isThumb, change_bits, message }) {
       top: isThumb ? -90 : window.innerHeight/2 - 22,
       left: !isThumb ? window.innerWidth - 230 - 30 : 30,
       position: isThumb ? 'relative' : 'absolute'
+    },
+    indexDiv: {
+      display: "flex",
+      flexDirection: "column"
+    },
+    bitIndex: {
+      color: "rgb(255, 255, 255)"
     }
   };
 
@@ -46,7 +53,12 @@ function MainGrid({bits, instruction, isThumb, change_bits, message }) {
       {!isThumb && <div style={Styles.title}>ARM</div>}
       <div style={Styles.center}>
         <div style={Styles.bitRowDiv}>
-          {bits.map((element, index) => <BitBox value={element} onPress={() => change_bits && change_bits(index)}/>)}
+          {bits.map((element, index) =>
+            <div style={Styles.indexDiv}>
+              <div style={Styles.bitIndex}>{bits.length-index-1}</div>
+              <BitBox value={element} onPress={() => change_bits && change_bits(index)}/>
+            </div> 
+          )}
         </div>
         {message && <a style={Styles.messageText}>{message}</a>}
         <a style={Styles.instructionText}>{instruction}</a>
