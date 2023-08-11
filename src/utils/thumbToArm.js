@@ -278,7 +278,7 @@ function format13(thumb_bits) {
     let offset = sword7 === 0x007f ? 0x0 : sword7; // sign extended problems
     let arm_opcode = sign === 0x0 ? ARM_DP_OPCODES['ADD'] : ARM_DP_OPCODES['SUB'];
     
-    return armDataProcessing(0x1, arm_opcode, 0x0, 0xd, ARM_REGS['SP'], offset << 1);
+    return armDataProcessing(0x1, arm_opcode, 0x0, 0xd, ARM_REGS['SP'], offset << 2);
 }
 
 // push/pop registers

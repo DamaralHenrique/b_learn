@@ -7,7 +7,7 @@ test("teste formato 13 - add - normal case", () => {
 
 test("teste formato 13 - add - border case", () => {
     const add = thumbToArm([1,0,1,1,0,0,0,0,0,1,1,1,1,1,1,0]);
-    expect(add).toBe(0b1110_00_1_0100_0_1101_1101_000011111100);
+    expect(add).toBe(0b1110_00_1_0100_0_1101_1101_000111111000);
 });
 
 test("teste formato 4 - add", () => {
