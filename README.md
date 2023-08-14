@@ -6,9 +6,8 @@
 2. [Requisitos e Dependências](#requisitos-e-dependências)
 3. [Execução](#execução)
 4. [Exemplos](#exemplos)
-5. [Bugs](#bugs-conhecidos)
-6. [Integrantes](#integrantes)
-7. [Agradecimentos](#agradecimentos)
+5. [Integrantes](#integrantes)
+6. [Agradecimentos](#agradecimentos)
 
 ## Objetivo
 
@@ -67,48 +66,47 @@ Para o uso do B_LEARB, basta clicar sobre as caixas dos bits, a tradução, caso
 
 - Operação aritmética com imediato
 
-![image](https://github.com/DamaralHenrique/b_learn/assets/64907004/b60593cd-1879-453c-9ae8-e406e4534a35)
+![image](https://github.com/DamaralHenrique/b_learn/assets/64907004/4df974e6-7ad8-4f35-b6a3-dd41abcab23d)
 
 - Operação de deslocamento do conteúdo de um registrador
 
-![image](https://github.com/DamaralHenrique/b_learn/assets/64907004/c341a350-e3ec-4830-9907-81398620ef30)
+![image](https://github.com/DamaralHenrique/b_learn/assets/64907004/aa0f3892-ad76-4be4-99b5-8b90409f4c97)
 
 - Operação lógica entre registradores
 
-![image](https://github.com/DamaralHenrique/b_learn/assets/64907004/3f42e5e1-7152-4727-8611-589d39178b29)
+![image](https://github.com/DamaralHenrique/b_learn/assets/64907004/d672948e-5bd1-48d9-831e-5b7a4d5c6e15)
 
 - Operação entre registradores "altos" (Bug na tradução ASCII)
-
-![image](https://github.com/DamaralHenrique/b_learn/assets/64907004/44569150-edb9-406f-975c-c79e71bde709)
+- 
+![image](https://github.com/DamaralHenrique/b_learn/assets/64907004/8d438ffb-dbc8-4a79-8688-22e6905b478c)
 
 - Operação de "Load", relativa ao contador de programa
 
-![image](https://github.com/DamaralHenrique/b_learn/assets/64907004/43711561-9a07-4693-b0fb-3ca78fba99a3)
+![image](https://github.com/DamaralHenrique/b_learn/assets/64907004/25950b48-0926-40a3-8260-3010fedbca93)
 
-- Operação de "Store byte", com deslocamento em registrador.
 
-![image](https://github.com/DamaralHenrique/b_learn/assets/64907004/62fbc296-80ca-49d8-9c49-0fe4da71f8e7)
+- Operação de "Load byte", com deslocamento em registrador.
+
+![image](https://github.com/DamaralHenrique/b_learn/assets/64907004/c944d53b-866e-444a-b448-1c993440cddf)
 
 - Operação de "Load half", com deslocamento imediato
 
-![image](https://github.com/DamaralHenrique/b_learn/assets/64907004/42328290-1dda-4dc5-9977-ae1728124950)
+![image](https://github.com/DamaralHenrique/b_learn/assets/64907004/ccea4bce-b447-42e6-9984-cfdf9f95b8d9)
 
 - Operação "Push"
 
-![image](https://github.com/DamaralHenrique/b_learn/assets/64907004/7de3dc9f-50b0-4d14-9520-c5a352925b40)
+![image](https://github.com/DamaralHenrique/b_learn/assets/64907004/d21f74e5-336d-4cab-95f4-1e6cad0a8a8a)
 
 - Operação de desvio condicional, endereço atingível
 
-![image](https://github.com/DamaralHenrique/b_learn/assets/64907004/172ba0bd-06a0-4205-b54b-cc76774c4852)
+![image](https://github.com/DamaralHenrique/b_learn/assets/64907004/eaf5f912-a531-4049-904e-a09fba49b84a)
 
 - Operação de desvio incondicional, endereço não atingível*
 
-![image](https://github.com/DamaralHenrique/b_learn/assets/64907004/f94142a2-7150-48d6-b903-09aff97038fd)
+![image](https://github.com/DamaralHenrique/b_learn/assets/64907004/9bc7084b-a54a-4908-8045-898a2446f7c2)
 
 > Endereços cujo bit 0 sejam "1" não são atingíveis por uma instrução traduzida para ARM32
 
-
-## Bugs conhecidos
 
 ## Integrantes
 
