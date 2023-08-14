@@ -330,7 +330,11 @@ function format18(thumb_bits) {
     if (offset11 % 2 === 0) {
         return armBranch(unconditional, 0x0, (offset11 >> 1), offset_size - 1);
     }
-    return 0x0;
+    return ARM_BASE_INSTRUCTIONS['NULL'];
+}
+
+function format19(thumb_bits) {
+    return ARM_BASE_INSTRUCTIONS['NULL'];
 }
 
 function thumbToArm(thumb_array) {
@@ -359,6 +363,7 @@ function thumbToArm(thumb_array) {
     if ((thumb_bits & 0xff00) === 0xdf00) return format17(thumb_bits);
     if ((thumb_bits & 0xf000) === 0xd000) return format16(thumb_bits); // Não mover acima de 17
     if ((thumb_bits & 0xf800) === 0xe000) return format18(thumb_bits);
+    if ((thumb_bits & 0xf000) === 0xf000) return format19(thumb_bits);
     return ARM_BASE_INSTRUCTIONS['NULL']; 
 }
 

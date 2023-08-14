@@ -1,3 +1,4 @@
+
 /*
 ATENÇÃO: O CÓDIGO AQUI PRESENTRE PERTENCE A BRUNO BASSETO
 https://github.com/bru4bas
@@ -5,6 +6,7 @@ https://github.com/bru4bas
 Esse arquivo contém as funções necessárias para a
 conversão da instrução binária para legível
 */
+
 
 const ccodes = [
   "eq",             // 0000
@@ -24,6 +26,35 @@ const ccodes = [
   "",               // 1110
   ""                // 1111
 ];
+
+function trata_rlist(bits) {
+   let res = '';
+   let mask = 1;
+   let reg = 0;
+   let marca = false;
+   let last = -1;
+   for(mask=1, reg=0; reg<8; mask<<=1, reg++) {
+      if((bits & mask) == mask) {
+         if(!marca) last = reg;
+         marca = true;
+      } else {
+         if(marca) {
+            let p = reg - 1;
+            if(res.length > 0) res += ',';
+            if(last != p) res += `r${last}-r${p}`;
+            else res += `r${last}`;
+         }
+         marca = false;
+      }
+   }
+ 
+   if(marca) {
+      if(res.length > 0) res += ',';
+      if(last != 15) res += `r${last}-r15`;
+      else res += `r15`;
+   }
+   return res;
+ }
 
 /**
 * Trata saltos (b).
@@ -179,8 +210,8 @@ function trata_op5(bits) {
      'lsl',
      'lsr',
      'asr',
-     'adds',
-     'subs',
+     'adcs',
+     'sbcs',
      'ror',
      'tsts',
      'negs',
@@ -197,6 +228,77 @@ function trata_op5(bits) {
      instrucao: res,
      mask: "0000002222555666"
   };
+}
+
+// Hi register operations/branch exchange
+function trata_op6(bits) {
+   
+   let opcode = (bits & 0x0300) >> 8;
+   let h1 =  (bits & 0x0080) >> 7;
+   let h2 = (bits & 0x0040) >> 6;
+   let res = [
+      'add',
+      'cmp',
+      'mov',
+      'bx'
+   ][opcode];
+   
+   // Seleciona os registradores de acordo com h1/h2
+   let Rs_Hs = ((bits & 0x0038) >> 3) + (h2 << 3);
+   let Rd_Hd = (bits & 0x0007) + (h1 << 3);
+   
+   if ( opcode === 0x3) {
+      if( h1 === 0x1) {
+            return {
+               instrucao: "???",
+               mask: "0000000000000000"
+            };
+      }
+      res = res + ` r${Rd_Hd}`;
+      return {
+         instrucao: res,
+         mask: "0000002222555666"
+      };
+   } else if ((h1 | h2) === 0x0) {
+      return {
+         instrucao: "???",
+         mask: "0000000000000000"
+      };
+   } else {
+      res = res + ` r${Rd_Hd}, r${Rs_Hs} `;
+      return {
+         instrucao: res,
+         mask: "0000000000000000"
+      };
+   }
+}
+
+function trata_op7(bits) {
+   let res = "add";
+   let sp = (bits & 0x0800) >> 11;
+   let word8 = (bits & 0x00ff);
+   let Rd = (bits & 0x0700) >> 8;
+   let arm_Rn = sp === 0 ? "PC" : "SP";
+   res = res + ` r${Rd}, ${arm_Rn}, #${word8 * 4}`
+   return {
+      instrucao: res,
+      mask: "0000000000000000"
+   };
+}
+
+function trata_op8(bits) {
+   let res = "add SP, #";
+   let sign = (bits & 0x0080) >> 7;
+   let sword7 = (bits & 0x007f);
+   let offset = sword7 === 0x007f ? 0x0 : sword7; // sign extended problems
+   if (sign === 1) {
+      res = res + `-`;
+   }
+   res = res + ` ${offset << 2} `;
+   return {
+      instrucao: res,
+      mask: "0000000000000000"
+   };
 }
 
 function trata_ld1(bits) {
@@ -279,6 +381,50 @@ function trata_ld5(bits) {
   };
 }
 
+function trata_ld6(bits) {
+   let res;
+   let ldr_str = (bits & 0x0800) >> 11;
+   let pc_lr = (bits & 0x0100) >> 8;
+   let extra_reg;
+   let Rlist = trata_rlist(bits);
+
+   if (ldr_str === 0x1){
+       extra_reg = 'PC';
+       res = `POP {${Rlist}`
+   } else {
+       extra_reg = 'LR';
+       res = `PUSH {${Rlist}`
+   }
+
+   if (pc_lr === 1) {
+      res = res + `, ${extra_reg}}`;
+   } else {
+      res = res + `}`;
+   }
+
+   return {
+      instrucao: res,
+      mask: "0000244433333333"
+   };   
+}
+
+function trata_ld7(bits) {
+   let res;
+   let ldr_str = (bits & 0x0800) >> 11;
+   let Rb = (bits & 0x0700) >> 8;
+   let Rlist = trata_rlist(bits);
+
+   if (ldr_str === 1) {
+      res = "ldmia";
+   } else {
+      res = "stmia";
+   }
+   res = res + ` r${Rb}!, {${Rlist}}`;
+   return {
+      instrucao: res,
+      mask: "0000244433333333"
+   };   
+}
 
 
 /*
@@ -316,6 +462,9 @@ function thumbToASCII(array) {
   if((bits & 0xe000) == 0x2000) return trata_op3(bits);
   if((bits & 0xe000) == 0x0000) return trata_op4(bits);
   if((bits & 0xfc00) == 0x4000) return trata_op5(bits);
+  if((bits & 0xfc00) == 0x4400) return trata_op6(bits);
+  if((bits & 0xf000) == 0xa000) return trata_op7(bits);
+  if((bits & 0xff00) == 0xb000) return trata_op8(bits);
   if((bits & 0xf000) == 0xd000) return trata_bcond(bits);
   if((bits & 0xf800) == 0xe000) return trata_b(bits);
   if((bits & 0xf000) == 0xf000) return trata_bl(bits);
@@ -325,6 +474,8 @@ function thumbToASCII(array) {
   if((bits & 0xf000) == 0x5000) return trata_ld3(bits);
   if((bits & 0xf800) == 0x4800) return trata_ld4(bits);
   if((bits & 0xf000) == 0x9000) return trata_ld5(bits);
+  if((bits & 0xf600) == 0xb400) return trata_ld6(bits);
+  if((bits & 0xf000) == 0xc000) return trata_ld7(bits);
 
   return {
      instrucao: "???",
