@@ -102,7 +102,9 @@ function format1(thumb_bits) {
     let Rs = getMasked(thumb_bits, 0x0038, 3);
     let Rd = getMasked(thumb_bits, 0x0007);
     let operand2 = (offset << 7) + (opcode << 4) + Rs;
-    return armDataProcessing(0x0, ARM_DP_OPCODES['MOV'], 0x1, 0x0, Rd, operand2);
+    return {
+        value: armDataProcessing(0x0, ARM_DP_OPCODES['MOV'], 0x1, 0x0, Rd, operand2),
+    };
 }
 
 // Add/sub
@@ -114,7 +116,9 @@ function format2(thumb_bits) {
     let Rd = getMasked(thumb_bits, 0x0007);
 
     let arm_opcode = opcode === 0 ? ARM_DP_OPCODES['ADD'] : ARM_DP_OPCODES['SUB'];
-    return armDataProcessing(immediate_flag, arm_opcode, 0x1, Rs, Rd, Rn_or_immediate);
+    return {
+        value: armDataProcessing(immediate_flag, arm_opcode, 0x1, Rs, Rd, Rn_or_immediate)
+    };
 }
 
 // Move/comapre/add/sub immediate
@@ -129,7 +133,9 @@ function format3(thumb_bits) {
     };
     let Rd = getMasked(thumb_bits, 0x0700, 8);
     let offset8 = getMasked(thumb_bits, 0x00ff);
-    return armDataProcessing(0x1, opcode_to_arm[opcode], 0x1, Rd, Rd, offset8);
+    return {
+        value: armDataProcessing(0x1, opcode_to_arm[opcode], 0x1, Rd, Rd, offset8)
+    };
 }
 
 // ALU operations
@@ -152,13 +158,21 @@ function format4(thumb_bits) {
     let shift_operand2 = (Rs << 8) + (shift_to_arm[opcode] << 5) + 0x10 + Rd;
     
     if (thumb_shift.includes(opcode)) {
-        return armDataProcessing(0x0, ARM_DP_OPCODES['MOV'], 0x1, 0x0, Rd, shift_operand2);
+        return {
+            value: armDataProcessing(0x0, ARM_DP_OPCODES['MOV'], 0x1, 0x0, Rd, shift_operand2)
+        };
     } else if (no_Rn_opcodes.includes(opcode)) {
-        return armDataProcessing(0x0, opcode, 0x1, Rd, Rd, Rs);
+        return {
+            value: armDataProcessing(0x0, opcode, 0x1, Rd, Rd, Rs)
+        };
     } else if (opcode === 0x9) {
-        return armDataProcessing(0x1, ARM_DP_OPCODES['RSB'], 0x1, Rs, Rd, 0x0);
+        return {
+            value: armDataProcessing(0x1, ARM_DP_OPCODES['RSB'], 0x1, Rs, Rd, 0x0)
+        };
     } else {
-        return armDataProcessing(0x0, opcode, 0x1, Rd, Rd, Rs);
+        return {
+            value: armDataProcessing(0x0, opcode, 0x1, Rd, Rd, Rs)
+        };
     }
     
 }
@@ -187,15 +201,26 @@ function format5(thumb_bits) {
     
     if ( opcode === 0x3) {
         if( h1 === 0x1) {
-            return 0x0;
+            return {
+                value: ARM_BASE_INSTRUCTIONS['NULL']
+            };
         }
-        return armBranchExchange(Rs_Hs); // BX, para ser implementado
+        return {
+            value: armBranchExchange(Rs_Hs)
+        };
     } else if ((h1 | h2) === 0x0) {
-        return 0x0; // undefined
+        // undefined
+        return {
+            value: ARM_BASE_INSTRUCTIONS['NULL']
+        } 
     } else if (opcode === 0x0) { 
-        return armDataProcessing(0x0, arm_opcode[opcode], 0x0, Rd_Hd, Rd_Hd, Rs_Hs);
+        return {
+            value: armDataProcessing(0x0, arm_opcode[opcode], 0x0, Rd_Hd, Rd_Hd, Rs_Hs)
+        };
     } else {
-        return armDataProcessing(0x0, arm_opcode[opcode], 0x0, 0x0, Rd_Hd, Rs_Hs); // deu certo
+        return {
+            value: armDataProcessing(0x0, arm_opcode[opcode], 0x0, 0x0, Rd_Hd, Rs_Hs)
+        };
     }
 }
 
@@ -203,7 +228,9 @@ function format5(thumb_bits) {
 function format6(thumb_bits) {
     let Rd = getMasked(thumb_bits, 0x0700, 8);
     let word8 = getMasked(thumb_bits, 0x00ff);
-    return armLoadStore(0x0, 0x0, 0x1, ARM_REGS['PC'], Rd, word8 << 2);
+    return {
+        value: armLoadStore(0x0, 0x0, 0x1, ARM_REGS['PC'], Rd, word8 << 2)
+    };
 }
 
 // load/store with register offset
@@ -213,7 +240,9 @@ function format7(thumb_bits) {
     let Ro = getMasked(thumb_bits, 0x01c0, 6);
     let Rb = getMasked(thumb_bits, 0x0038, 3);
     let Rd = getMasked(thumb_bits, 0x0007);
-    return armLoadStore(0x1, byte_flag, load_store, Rb, Rd, Ro);
+    return {
+        value: armLoadStore(0x1, byte_flag, load_store, Rb, Rd, Ro)
+    };
 }
 
 // load/store halfword with immediate offset
@@ -225,7 +254,9 @@ function format8(thumb_bits) {
     let Ro = getMasked(thumb_bits, 0x01c0, 6);
     let Rb = getMasked(thumb_bits, 0x0038, 3);
     let Rd = getMasked(thumb_bits, 0x0007);
-    return armHSLoadStore(0x0, signed_flag, half_flag, load_store, Rb, Rd, 0x0, Ro);
+    return {
+        value: armHSLoadStore(0x0, signed_flag, half_flag, load_store, Rb, Rd, 0x0, Ro)
+    };
 }
 
 // load/store with immediate offset
@@ -238,7 +269,9 @@ function format9(thumb_bits) {
     }
     let Rb = getMasked(thumb_bits, 0x0038, 3);
     let Rd = getMasked(thumb_bits, 0x0007);
-    return armLoadStore(0x0, byte_flag, load_store, Rb, Rd, offset5);
+    return {
+        value: armLoadStore(0x0, byte_flag, load_store, Rb, Rd, offset5)
+    };
 }
 
 
@@ -250,7 +283,9 @@ function format10(thumb_bits) {
     let op2_low = (offset5 & 0x0007) << 1;
     let Rb = getMasked(thumb_bits, 0x0038, 3);
     let Rd = getMasked(thumb_bits, 0x0007);
-    return armHSLoadStore(0x1, 0x0, 0x1, load_store, Rb, Rd, op2_high, op2_low);
+    return {
+        value: armHSLoadStore(0x1, 0x0, 0x1, load_store, Rb, Rd, op2_high, op2_low)
+    };
 }
 
 // SP-relative load/store
@@ -258,7 +293,9 @@ function format11(thumb_bits) {
     let load_store = getMasked(thumb_bits, 0x0800, 11);
     let word8 = getMasked(thumb_bits, 0x00ff);
     let Rd = getMasked(thumb_bits, 0x0700, 8);
-    return armLoadStore(0x0, 0x0, load_store, ARM_REGS['SP'], Rd, word8 << 2);
+    return {
+        value: armLoadStore(0x0, 0x0, load_store, ARM_REGS['SP'], Rd, word8 << 2)
+    };
 }
 
 // Load address 
@@ -268,7 +305,9 @@ function format12(thumb_bits) {
     let Rd = getMasked(thumb_bits, 0x0700, 8);
     let arm_Rn = sp === 0 ? ARM_REGS['PC'] : ARM_REGS['SP'];
     let operand2 = (0b1111 << 8) + word8; // que o offset esteja correto no ARM32
-    return armDataProcessing(0x1, ARM_DP_OPCODES['ADD'], 0x0, arm_Rn, Rd, operand2);
+    return {
+        value: armDataProcessing(0x1, ARM_DP_OPCODES['ADD'], 0x0, arm_Rn, Rd, operand2)
+    };
 }
 
 // add offset to stack pointer
@@ -278,7 +317,9 @@ function format13(thumb_bits) {
     let offset = sword7 === 0x007f ? 0x0 : sword7; // sign extended problems
     let arm_opcode = sign === 0x0 ? ARM_DP_OPCODES['ADD'] : ARM_DP_OPCODES['SUB'];
     
-    return armDataProcessing(0x1, arm_opcode, 0x0, 0xd, ARM_REGS['SP'], offset << 2);
+    return {
+        value: armDataProcessing(0x1, arm_opcode, 0x0, 0xd, ARM_REGS['SP'], offset << 2)
+    };
 }
 
 // push/pop registers
@@ -297,7 +338,9 @@ function format14(thumb_bits) {
         up_down = 0x0;
     }
     let Rlist = getMasked(thumb_bits, 0x00ff) + (pc_lr << extra_reg);
-    return armRegTransfer(pre_pos, up_down, ldr_str, ARM_REGS['SP'], Rlist);
+    return {
+        value: armRegTransfer(pre_pos, up_down, ldr_str, ARM_REGS['SP'], Rlist)
+    };
 }
 
 // Multiple load/store
@@ -305,7 +348,9 @@ function format15(thumb_bits) {
     let ldr_str = getMasked(thumb_bits, 0x0800, 11);
     let Rb = getMasked(thumb_bits, 0x0700, 8);
     let Rlist = getMasked(thumb_bits, 0x00ff);
-    return armRegTransfer(0x0, 0x1, ldr_str, Rb, Rlist);
+    return {
+        value: armRegTransfer(0x0, 0x1, ldr_str, Rb, Rlist)
+    };
 }
 
 function format16(thumb_bits) {
@@ -313,14 +358,21 @@ function format16(thumb_bits) {
     let soffset8 = getMasked(thumb_bits, 0x00ff);
     let offset_size = 0x8;
     if (soffset8 % 2 === 0) {
-        return armBranch(condition, 0x0, (soffset8 >> 1), offset_size - 1);
+        return {
+            value: armBranch(condition, 0x0, (soffset8 >> 1), offset_size - 1)
+        };
     }
-    return 0x0;    
+    return {
+        value: ARM_BASE_INSTRUCTIONS['NULL'],
+        error: "Endereço não alcançável em ARM32"
+    };
 }
 
 function format17(thumb_bits) {
     let value8 = getMasked(thumb_bits, 0x00ff);
-    return armSWI(value8);
+    return {
+        value: armSWI(value8)
+    };
 }
 
 function format18(thumb_bits) {
@@ -328,13 +380,20 @@ function format18(thumb_bits) {
     let unconditional = 0xe;
     let offset_size = 0xb;
     if (offset11 % 2 === 0) {
-        return armBranch(unconditional, 0x0, (offset11 >> 1), offset_size - 1);
+        return {
+            value: armBranch(unconditional, 0x0, (offset11 >> 1), offset_size - 1)
+        };
     }
-    return ARM_BASE_INSTRUCTIONS['NULL'];
+    return {
+        value: ARM_BASE_INSTRUCTIONS['NULL'],
+        error: "Endereço não alcançável em ARM32"
+    };
 }
 
 function format19(thumb_bits) {
-    return ARM_BASE_INSTRUCTIONS['NULL'];
+    return {
+        value: ARM_BASE_INSTRUCTIONS['NULL']
+    };
 }
 
 function thumbToArm(thumb_array) {
@@ -364,7 +423,9 @@ function thumbToArm(thumb_array) {
     if ((thumb_bits & 0xf000) === 0xd000) return format16(thumb_bits); // Não mover acima de 17
     if ((thumb_bits & 0xf800) === 0xe000) return format18(thumb_bits);
     if ((thumb_bits & 0xf000) === 0xf000) return format19(thumb_bits);
-    return ARM_BASE_INSTRUCTIONS['NULL']; 
+    return {
+        value: ARM_BASE_INSTRUCTIONS['NULL']
+    };
 }
 
 export { thumbToArm }

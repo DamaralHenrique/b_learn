@@ -10,6 +10,8 @@ function App(){
   const [thumbInstruction, setThumbInstruction] = useState("Array(16).fill(false)");
   const [armBits, setArmBits] = useState(Array(32).fill(false));
   const [armInstruction, setArmInstruction] = useState("Array(16).fill(false)");
+  const [thumbMessage, setThumbMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     console.log("thumbBits changed!");
@@ -30,13 +32,16 @@ function App(){
     newArray[index] = !newArray[index];
     setThumbBits(newArray);
     var arm_array = Array(32).fill(false);
-    var arm_string = thumbToArm(newArray).toString(2);
+    var arm_object = thumbToArm(newArray);
+    var arm_string = arm_object['value'].toString(2);
     arm_string = arm_string.padStart(32, '0');
     console.log(arm_string);
     [...arm_string].forEach((char, index) => {
       arm_array[index] = char == '1';
     })
     setArmBits(arm_array);
+    setThumbMessage(arm_object['message']);
+    setErrorMessage(arm_object['error']);
   }
 
   return (
@@ -46,13 +51,13 @@ function App(){
         instruction={thumbInstruction}
         isThumb={true}
         change_bits={change_thumb_bits}
-        message="my message"
+        message={thumbMessage}
       />
       <MainGrid
         bits={armBits}
         instruction={armInstruction}
         isThumb={false}
-        message="error message"
+        message={errorMessage}
       />
     </div>
   );
