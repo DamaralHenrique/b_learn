@@ -110,11 +110,11 @@ Para o uso do B_LEARB, basta clicar sobre as caixas dos bits, a tradução, caso
 
 ## Integrantes
 
-| Nome               | Github |
-|--------------------|--------|
-| Henrique D'Amaral  | @git   |
-| Rafael Nakata      | @git   |
-| Vinicius de Castro | @git   |
+| Nome               | Github           |
+|--------------------|------------------|
+| Henrique D'Amaral  | @DamaralHenrique |
+| Rafael Nakata      | @rafnak1         |
+| Vinicius de Castro | @vinicius-CL     |
 
 ## Agradecimentos
 
