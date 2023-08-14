@@ -222,8 +222,9 @@ function format5(thumb_bits) {
             value: armDataProcessing(0x0, arm_opcode[opcode], 0x0, Rd_Hd, Rd_Hd, Rs_Hs)
         };
     } else {
+        let set_condition = opcode === 0x1 ? 0x1 : 0x0;
         return {
-            value: armDataProcessing(0x0, arm_opcode[opcode], 0x0, 0x0, Rd_Hd, Rs_Hs)
+            value: armDataProcessing(0x0, arm_opcode[opcode], set_condition , Rd_Hd, Rd_Hd, Rs_Hs)
         };
     }
 }
