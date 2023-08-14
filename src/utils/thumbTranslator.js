@@ -248,13 +248,7 @@ function trata_op6(bits) {
    let Rd_Hd = (bits & 0x0007) + (h1 << 3);
    
    if ( opcode === 0x3) {
-      if( h1 === 0x1) {
-            return {
-               instrucao: "???",
-               mask: "0000000000000000"
-            };
-      }
-      res = res + ` r${Rd_Hd}`;
+      res = res + ` r${Rs_Hs}`;
       return {
          instrucao: res,
          mask: "0000002222555666"
@@ -290,7 +284,7 @@ function trata_op8(bits) {
    let res = "add SP, #";
    let sign = (bits & 0x0080) >> 7;
    let sword7 = (bits & 0x007f);
-   let offset = sword7 === 0x007f ? 0x0 : sword7; // sign extended problems
+   let offset = sword7; // sign extended problems
    if (sign === 1) {
       res = res + `-`;
    }

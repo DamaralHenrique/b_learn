@@ -200,18 +200,22 @@ function format5(thumb_bits) {
     let Rd_Hd = getMasked(thumb_bits, 0x0007) + (h1 << 3);
     
     if ( opcode === 0x3) {
+        let message = "";
         if( h1 === 0x1) {
-            return {
-                value: ARM_BASE_INSTRUCTIONS['NULL']
-            };
+            message = "H1 não tem efeito sobre esta operação"
         }
         return {
-            value: armBranchExchange(Rs_Hs)
+            value: armBranchExchange(Rs_Hs),
+            message: message
         };
     } else if ((h1 | h2) === 0x0) {
         // undefined
         return {
-            value: ARM_BASE_INSTRUCTIONS['NULL']
+            value: ARM_BASE_INSTRUCTIONS['NULL'],
+            message: "A configuração H1 = H2 = 0 (bits 7 e 6) para Op = 00 (ADD), \
+                      Op =01 (CMP) e Op = 10 (MOV) não é definida, e \
+                      não deve ser usada.",
+            error: "Instrução especificada é inválida"
         } 
     } else if (opcode === 0x0) { 
         return {
@@ -229,7 +233,8 @@ function format6(thumb_bits) {
     let Rd = getMasked(thumb_bits, 0x0700, 8);
     let word8 = getMasked(thumb_bits, 0x00ff);
     return {
-        value: armLoadStore(0x0, 0x0, 0x1, ARM_REGS['PC'], Rd, word8 << 2)
+        value: armLoadStore(0x0, 0x0, 0x1, ARM_REGS['PC'], Rd, word8 << 2),
+        message: "O deslocamento especificado (bits 7-0) é multiplicado por 4"
     };
 }
 
@@ -245,7 +250,7 @@ function format7(thumb_bits) {
     };
 }
 
-// load/store halfword with immediate offset
+// load/store sign-extended byte/halfword
 function format8(thumb_bits) {
     let h_flag = getMasked(thumb_bits, 0x0800, 11);
     let signed_flag = getMasked(thumb_bits, 0x0400, 10);
@@ -270,7 +275,8 @@ function format9(thumb_bits) {
     let Rb = getMasked(thumb_bits, 0x0038, 3);
     let Rd = getMasked(thumb_bits, 0x0007);
     return {
-        value: armLoadStore(0x0, byte_flag, load_store, Rb, Rd, offset5)
+        value: armLoadStore(0x0, byte_flag, load_store, Rb, Rd, offset5),
+        message: "O deslocamento especificado (bits 10-6) é multiplicado por 4 para B = 0"
     };
 }
 
@@ -284,7 +290,8 @@ function format10(thumb_bits) {
     let Rb = getMasked(thumb_bits, 0x0038, 3);
     let Rd = getMasked(thumb_bits, 0x0007);
     return {
-        value: armHSLoadStore(0x1, 0x0, 0x1, load_store, Rb, Rd, op2_high, op2_low)
+        value: armHSLoadStore(0x1, 0x0, 0x1, load_store, Rb, Rd, op2_high, op2_low),
+        message: "O deslocamento especificado (bits 10-6) é multiplicado por 2"
     };
 }
 
@@ -294,7 +301,8 @@ function format11(thumb_bits) {
     let word8 = getMasked(thumb_bits, 0x00ff);
     let Rd = getMasked(thumb_bits, 0x0700, 8);
     return {
-        value: armLoadStore(0x0, 0x0, load_store, ARM_REGS['SP'], Rd, word8 << 2)
+        value: armLoadStore(0x0, 0x0, load_store, ARM_REGS['SP'], Rd, word8 << 2),
+        message: "O deslocamento especificado (bits 7-0) é multiplicado por 4"
     };
 }
 
@@ -306,7 +314,8 @@ function format12(thumb_bits) {
     let arm_Rn = sp === 0 ? ARM_REGS['PC'] : ARM_REGS['SP'];
     let operand2 = (0b1111 << 8) + word8; // que o offset esteja correto no ARM32
     return {
-        value: armDataProcessing(0x1, ARM_DP_OPCODES['ADD'], 0x0, arm_Rn, Rd, operand2)
+        value: armDataProcessing(0x1, ARM_DP_OPCODES['ADD'], 0x0, arm_Rn, Rd, operand2),
+        message: "O deslocamento especificado (bits 7-0) é multiplicado por 4"
     };
 }
 
@@ -314,11 +323,13 @@ function format12(thumb_bits) {
 function format13(thumb_bits) {
     let sign = getMasked(thumb_bits, 0x0080, 7);
     let sword7 = getMasked(thumb_bits, 0x007f);
-    let offset = sword7 === 0x007f ? 0x0 : sword7; // sign extended problems
+    let offset = sword7; // sign extended problems
     let arm_opcode = sign === 0x0 ? ARM_DP_OPCODES['ADD'] : ARM_DP_OPCODES['SUB'];
     
     return {
-        value: armDataProcessing(0x1, arm_opcode, 0x0, 0xd, ARM_REGS['SP'], offset << 2)
+        value: armDataProcessing(0x1, arm_opcode, 0x0, 0xd, ARM_REGS['SP'], offset << 2),
+        message: "O deslocamento especificado (bits 6-0) é multiplicado por 4, e usa\
+                  represantação sinal-magnitude"
     };
 }
 
@@ -392,7 +403,8 @@ function format18(thumb_bits) {
 
 function format19(thumb_bits) {
     return {
-        value: ARM_BASE_INSTRUCTIONS['NULL']
+        value: ARM_BASE_INSTRUCTIONS['NULL'],
+        error: "Não possui instrução equivalente"
     };
 }
 
@@ -424,7 +436,9 @@ function thumbToArm(thumb_array) {
     if ((thumb_bits & 0xf800) === 0xe000) return format18(thumb_bits);
     if ((thumb_bits & 0xf000) === 0xf000) return format19(thumb_bits);
     return {
-        value: ARM_BASE_INSTRUCTIONS['NULL']
+        value: ARM_BASE_INSTRUCTIONS['NULL'],
+        message: "Não é uma instrução válida",
+        error: "Instrução inválida especificada"
     };
 }
 
