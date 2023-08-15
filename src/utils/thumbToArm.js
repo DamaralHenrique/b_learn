@@ -180,7 +180,9 @@ function format4(thumb_bits) {
 function format4m(thumb_bits) {
     let Rs = getMasked(thumb_bits, 0x0038, 3);
     let Rd = getMasked(thumb_bits, 0x0007);
-    return armMultiplication(Rd, Rs);
+    return {
+        value: armMultiplication(Rd, Rs)
+    };
 }
 
 // Hi register operations/branch exchange

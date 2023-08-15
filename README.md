@@ -6,9 +6,8 @@
 2. [Requisitos e Dependências](#requisitos-e-dependências)
 3. [Execução](#execução)
 4. [Exemplos](#exemplos)
-5. [Bugs](#bugs-conhecidos)
-6. [Integrantes](#integrantes)
-7. [Agradecimentos](#agradecimentos)
+5. [Integrantes](#integrantes)
+6. [Agradecimentos](#agradecimentos)
 
 ## Objetivo
 
@@ -85,9 +84,9 @@ Para o uso do B_LEARB, basta clicar sobre as caixas dos bits, a tradução, caso
 
 ![image](./images/load_pc.png)
 
-- Operação de "Store byte", com deslocamento em registrador.
+- Operação de "Load byte", com deslocamento em registrador.
 
-![image](./images/store_byte.png)
+![image](./images/load_byte.png)
 
 - Operação de "Load half", com deslocamento imediato
 
@@ -108,15 +107,13 @@ Para o uso do B_LEARB, basta clicar sobre as caixas dos bits, a tradução, caso
 > Endereços cujo bit 0 sejam "1" não são atingíveis por uma instrução traduzida para ARM32
 
 
-## Bugs conhecidos
-
 ## Integrantes
 
-| Nome               | Github |
-|--------------------|--------|
-| Henrique D'Amaral  | @git   |
-| Rafael Nakata      | @git   |
-| Vinicius de Castro | @git   |
+| Nome               | Github           |
+|--------------------|------------------|
+| Henrique D'Amaral  | @DamaralHenrique |
+| Rafael Nakata      | @rafnak1         |
+| Vinicius de Castro | @vinicius-CL     |
 
 ## Agradecimentos
 
